@@ -1,0 +1,7 @@
+node_modules/
+data/*.tmp
+data/auth.json
+.env
+.env.cloud
+*.log
+.vercel

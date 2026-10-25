@@ -1,0 +1,432 @@
+{
+  "database": {
+    "name": "credit_tracker",
+    "charset": "utf8mb4",
+    "collation": "utf8mb4_unicode_ci",
+    "engine": "InnoDB"
+  },
+  "tables": {
+    "store_settings": {
+      "columns": {
+        "id": {
+          "type": "TINYINT UNSIGNED",
+          "primaryKey": true,
+          "check": "id = 1"
+        },
+        "store_name": {
+          "type": "VARCHAR(120)",
+          "nullable": false
+        },
+        "currency": {
+          "type": "CHAR(3)",
+          "nullable": false,
+          "default": "PHP"
+        }
+      }
+    },
+    "owner_accounts": {
+      "columns": {
+        "id": {
+          "type": "TINYINT UNSIGNED",
+          "primaryKey": true,
+          "check": "id = 1"
+        },
+        "username": {
+          "type": "VARCHAR(40)",
+          "nullable": false,
+          "unique": true
+        },
+        "password_salt": {
+          "type": "CHAR(32)",
+          "nullable": false
+        },
+        "password_hash": {
+          "type": "CHAR(128)",
+          "nullable": false
+        },
+        "created_at": {
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      }
+    },
+    "owner_sessions": {
+      "columns": {
+        "token_hash": {
+          "type": "CHAR(64)",
+          "primaryKey": true,
+          "nullable": false
+        },
+        "owner_id": {
+          "type": "TINYINT UNSIGNED",
+          "nullable": false,
+          "default": 1
+        },
+        "created_at": {
+          "type": "DATETIME",
+          "nullable": false
+        },
+        "expires_at": {
+          "type": "DATETIME",
+          "nullable": false
+        }
+      },
+      "foreignKeys": [
+        {
+          "column": "owner_id",
+          "references": {
+            "table": "owner_accounts",
+            "column": "id"
+          },
+          "onDelete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_sessions_expiry",
+          "columns": ["expires_at"]
+        }
+      ]
+    },
+    "customers": {
+      "columns": {
+        "id": {
+          "type": "VARCHAR(36)",
+          "primaryKey": true,
+          "nullable": false
+        },
+        "name": {
+          "type": "VARCHAR(80)",
+          "nullable": false
+        },
+        "phone": {
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "default": ""
+        },
+        "purok": {
+          "type": "VARCHAR(80)",
+          "nullable": false
+        },
+        "credit_limit": {
+          "type": "DECIMAL(12,2)",
+          "nullable": false,
+          "check": "credit_limit > 0"
+        },
+        "status": {
+          "type": "ENUM",
+          "values": ["active", "suspended"],
+          "nullable": false,
+          "default": "active"
+        },
+        "created_at": {
+          "type": "DATETIME",
+          "nullable": false
+        }
+      },
+      "indexes": [
+        {
+          "name": "idx_customers_name",
+          "columns": ["name"]
+        }
+      ]
+    },
+    "applications": {
+      "columns": {
+        "id": {
+          "type": "VARCHAR(36)",
+          "primaryKey": true,
+          "nullable": false
+        },
+        "type": {
+          "type": "ENUM",
+          "values": ["newCustomer", "limitIncrease"],
+          "nullable": false,
+          "default": "newCustomer"
+        },
+        "status": {
+          "type": "ENUM",
+          "values": ["pending", "approved", "rejected"],
+          "nullable": false,
+          "default": "pending"
+        },
+        "customer_name": {
+          "type": "VARCHAR(80)",
+          "nullable": false
+        },
+        "phone": {
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "default": ""
+        },
+        "purok": {
+          "type": "VARCHAR(80)",
+          "nullable": false,
+          "default": ""
+        },
+        "requested_limit": {
+          "type": "DECIMAL(12,2)",
+          "nullable": false,
+          "check": "requested_limit > 0"
+        },
+        "note": {
+          "type": "VARCHAR(240)",
+          "nullable": false,
+          "default": ""
+        },
+        "customer_id": {
+          "type": "VARCHAR(36)",
+          "nullable": true
+        },
+        "created_at": {
+          "type": "DATETIME",
+          "nullable": false
+        },
+        "reviewed_at": {
+          "type": "DATETIME",
+          "nullable": true
+        }
+      },
+      "foreignKeys": [
+        {
+          "column": "customer_id",
+          "references": {
+            "table": "customers",
+            "column": "id"
+          },
+          "onDelete": "SET NULL"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_applications_status_created",
+          "columns": ["status", "created_at"]
+        }
+      ]
+    },
+    "transactions": {
+      "columns": {
+        "id": {
+          "type": "VARCHAR(36)",
+          "primaryKey": true,
+          "nullable": false
+        },
+        "customer_id": {
+          "type": "VARCHAR(36)",
+          "nullable": false
+        },
+        "type": {
+          "type": "ENUM",
+          "values": ["credit", "payment"],
+          "nullable": false
+        },
+        "amount": {
+          "type": "DECIMAL(12,2)",
+          "nullable": false,
+          "check": "amount > 0"
+        },
+        "note": {
+          "type": "VARCHAR(240)",
+          "nullable": false,
+          "default": ""
+        },
+        "transaction_date": {
+          "type": "DATE",
+          "nullable": false
+        },
+        "due_date": {
+          "type": "DATE",
+          "nullable": true
+        },
+        "created_at": {
+          "type": "DATETIME",
+          "nullable": false
+        },
+        "voided_at": {
+          "type": "DATETIME",
+          "nullable": true
+        },
+        "void_reason": {
+          "type": "VARCHAR(240)",
+          "nullable": false,
+          "default": ""
+        }
+      },
+      "foreignKeys": [
+        {
+          "column": "customer_id",
+          "references": {
+            "table": "customers",
+            "column": "id"
+          },
+          "onDelete": "RESTRICT"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_transactions_customer_date",
+          "columns": ["customer_id", "transaction_date", "created_at"]
+        },
+        {
+          "name": "idx_transactions_due_date",
+          "columns": ["due_date"]
+        }
+      ],
+      "checks": [
+        "type <> 'credit' OR due_date IS NOT NULL",
+        "type <> 'payment' OR due_date IS NULL"
+      ]
+    }
+  },
+  "initialData": {
+    "store_settings": [
+      {
+        "id": 1,
+        "store_name": "Aling Nena's Sari-Sari Store",
+        "currency": "PHP"
+      }
+    ],
+    "owner_accounts": [],
+    "owner_sessions": [],
+    "customers": [
+      {
+        "id": "cus-maria-santos",
+        "name": "Maria Santos",
+        "phone": "0917 123 4567",
+        "purok": "Purok 3",
+        "credit_limit": 1000,
+        "status": "active",
+        "created_at": "2026-09-12 08:00:00"
+      },
+      {
+        "id": "cus-juan-dela-cruz",
+        "name": "Juan Dela Cruz",
+        "phone": "0918 123 4567",
+        "purok": "Purok 1",
+        "credit_limit": 500,
+        "status": "active",
+        "created_at": "2026-09-15 08:00:00"
+      },
+      {
+        "id": "cus-lorna-cruz",
+        "name": "Lorna Cruz",
+        "phone": "0920 555 0142",
+        "purok": "Purok 2",
+        "credit_limit": 800,
+        "status": "active",
+        "created_at": "2026-09-17 08:00:00"
+      },
+      {
+        "id": "cus-tonyo-bautista",
+        "name": "Tonyo Bautista",
+        "phone": "0935 777 0198",
+        "purok": "Purok 4",
+        "credit_limit": 300,
+        "status": "active",
+        "created_at": "2026-09-20 08:00:00"
+      }
+    ],
+    "applications": [
+      {
+        "id": "app-pedro-reyes",
+        "type": "newCustomer",
+        "status": "pending",
+        "customer_name": "Pedro Reyes",
+        "phone": "",
+        "purok": "Purok 2",
+        "requested_limit": 500,
+        "note": "New customer credit request",
+        "customer_id": null,
+        "created_at": "2026-10-25 08:00:00",
+        "reviewed_at": null
+      }
+    ],
+    "transactions": [
+      {
+        "id": "txn-maria-first-credit",
+        "customer_id": "cus-maria-santos",
+        "type": "credit",
+        "amount": 200,
+        "note": "Rice and canned goods",
+        "transaction_date": "2026-10-05",
+        "due_date": "2026-10-20",
+        "created_at": "2026-10-05 09:00:00",
+        "voided_at": null,
+        "void_reason": ""
+      },
+      {
+        "id": "txn-maria-payment",
+        "customer_id": "cus-maria-santos",
+        "type": "payment",
+        "amount": 150,
+        "note": "Cash payment",
+        "transaction_date": "2026-10-12",
+        "due_date": null,
+        "created_at": "2026-10-12 10:00:00",
+        "voided_at": null,
+        "void_reason": ""
+      },
+      {
+        "id": "txn-maria-second-credit",
+        "customer_id": "cus-maria-santos",
+        "type": "credit",
+        "amount": 300,
+        "note": "Cooking oil, sugar, and coffee",
+        "transaction_date": "2026-10-15",
+        "due_date": "2026-10-30",
+        "created_at": "2026-10-15 09:00:00",
+        "voided_at": null,
+        "void_reason": ""
+      },
+      {
+        "id": "txn-juan-credit",
+        "customer_id": "cus-juan-dela-cruz",
+        "type": "credit",
+        "amount": 120,
+        "note": "Noodles and soft drinks",
+        "transaction_date": "2026-10-12",
+        "due_date": "2026-10-22",
+        "created_at": "2026-10-12 09:00:00",
+        "voided_at": null,
+        "void_reason": ""
+      },
+      {
+        "id": "txn-juan-payment",
+        "customer_id": "cus-juan-dela-cruz",
+        "type": "payment",
+        "amount": 120,
+        "note": "Paid in full",
+        "transaction_date": "2026-10-18",
+        "due_date": null,
+        "created_at": "2026-10-18 11:00:00",
+        "voided_at": null,
+        "void_reason": ""
+      },
+      {
+        "id": "txn-lorna-credit",
+        "customer_id": "cus-lorna-cruz",
+        "type": "credit",
+        "amount": 450,
+        "note": "Household groceries",
+        "transaction_date": "2026-10-08",
+        "due_date": "2026-10-13",
+        "created_at": "2026-10-08 09:00:00",
+        "voided_at": null,
+        "void_reason": ""
+      },
+      {
+        "id": "txn-tonyo-credit",
+        "customer_id": "cus-tonyo-bautista",
+        "type": "credit",
+        "amount": 280,
+        "note": "Canned goods and bread",
+        "transaction_date": "2026-10-20",
+        "due_date": "2026-10-30",
+        "created_at": "2026-10-20 09:00:00",
+        "voided_at": null,
+        "void_reason": ""
+      }
+    ]
+  }
+}

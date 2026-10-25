@@ -1,0 +1,156 @@
+{
+  "settings": {
+    "storeName": "BURNICO SARI-SARI Store",
+    "currency": "PHP"
+  },
+  "customers": [
+    {
+      "id": "cus-maria-santos",
+      "name": "Maria Santos",
+      "phone": "0917 123 4567",
+      "purok": "Purok 3",
+      "creditLimit": 1000,
+      "status": "active",
+      "createdAt": "2026-09-12T08:00:00.000Z"
+    },
+    {
+      "id": "cus-juan-dela-cruz",
+      "name": "Juan Dela Cruz",
+      "phone": "0918 123 4567",
+      "purok": "Purok 1",
+      "creditLimit": 500,
+      "status": "active",
+      "createdAt": "2026-09-15T08:00:00.000Z"
+    },
+    {
+      "id": "cus-lorna-cruz",
+      "name": "Lorna Cruz",
+      "phone": "0920 555 0142",
+      "purok": "Purok 2",
+      "creditLimit": 800,
+      "status": "active",
+      "createdAt": "2026-09-17T08:00:00.000Z"
+    },
+    {
+      "id": "cus-tonyo-bautista",
+      "name": "Tonyo Bautista",
+      "phone": "0935 777 0198",
+      "purok": "Purok 4",
+      "creditLimit": 300,
+      "status": "active",
+      "createdAt": "2026-09-20T08:00:00.000Z"
+    }
+  ],
+  "applications": [
+    {
+      "id": "app-pedro-reyes",
+      "type": "newCustomer",
+      "status": "rejected",
+      "customerName": "Pedro Reyes",
+      "phone": "",
+      "purok": "Purok 2",
+      "requestedLimit": 500,
+      "note": "New customer credit request",
+      "createdAt": "2026-10-25T08:00:00.000Z",
+      "reviewedAt": "2026-10-25T12:03:17.406Z"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "txn-maria-first-credit",
+      "customerId": "cus-maria-santos",
+      "type": "credit",
+      "amount": 200,
+      "note": "Rice and canned goods",
+      "date": "2026-10-05",
+      "dueDate": "2026-10-20",
+      "createdAt": "2026-10-05T09:00:00.000Z",
+      "voidedAt": null,
+      "voidReason": ""
+    },
+    {
+      "id": "txn-maria-payment",
+      "customerId": "cus-maria-santos",
+      "type": "payment",
+      "amount": 150,
+      "note": "Cash payment",
+      "date": "2026-10-12",
+      "dueDate": null,
+      "createdAt": "2026-10-12T10:00:00.000Z",
+      "voidedAt": null,
+      "voidReason": ""
+    },
+    {
+      "id": "txn-maria-second-credit",
+      "customerId": "cus-maria-santos",
+      "type": "credit",
+      "amount": 300,
+      "note": "Cooking oil, sugar, and coffee",
+      "date": "2026-10-15",
+      "dueDate": "2026-10-30",
+      "createdAt": "2026-10-15T09:00:00.000Z",
+      "voidedAt": null,
+      "voidReason": ""
+    },
+    {
+      "id": "txn-juan-credit",
+      "customerId": "cus-juan-dela-cruz",
+      "type": "credit",
+      "amount": 120,
+      "note": "Noodles and soft drinks",
+      "date": "2026-10-12",
+      "dueDate": "2026-10-22",
+      "createdAt": "2026-10-12T09:00:00.000Z",
+      "voidedAt": null,
+      "voidReason": ""
+    },
+    {
+      "id": "txn-juan-payment",
+      "customerId": "cus-juan-dela-cruz",
+      "type": "payment",
+      "amount": 120,
+      "note": "Paid in full",
+      "date": "2026-10-18",
+      "dueDate": null,
+      "createdAt": "2026-10-18T11:00:00.000Z",
+      "voidedAt": null,
+      "voidReason": ""
+    },
+    {
+      "id": "txn-lorna-credit",
+      "customerId": "cus-lorna-cruz",
+      "type": "credit",
+      "amount": 450,
+      "note": "Household groceries",
+      "date": "2026-10-08",
+      "dueDate": "2026-10-13",
+      "createdAt": "2026-10-08T09:00:00.000Z",
+      "voidedAt": null,
+      "voidReason": ""
+    },
+    {
+      "id": "txn-tonyo-credit",
+      "customerId": "cus-tonyo-bautista",
+      "type": "credit",
+      "amount": 280,
+      "note": "Canned goods and bread",
+      "date": "2026-10-20",
+      "dueDate": "2026-10-30",
+      "createdAt": "2026-10-20T09:00:00.000Z",
+      "voidedAt": null,
+      "voidReason": ""
+    },
+    {
+      "id": "baeae6f0-e49e-4fb7-89f0-feba503db109",
+      "customerId": "cus-juan-dela-cruz",
+      "type": "credit",
+      "amount": 100,
+      "note": "",
+      "date": "2026-10-25",
+      "dueDate": "2026-11-01",
+      "createdAt": "2026-10-25T12:03:58.719Z",
+      "voidedAt": null,
+      "voidReason": ""
+    }
+  ]
+}

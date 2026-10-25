@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101b35">
+    <title>Credit Tracker | BURNICO SARI-SARI Store</title>
+    <link rel="icon" type="image/png" href="/images/store-logo.png">
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Main navigation">
+        <a class="brand" href="/" aria-label="Credit Tracker home">
+          <img class="brand-logo" src="/images/store-logo.png" alt="Burnico neighborhood store logo">
+          <span class="brand-copy"><strong>Credit Tracker</strong><small id="store-name">BURNICO SARI-SARI Store</small></span>
+        </a>
+        <p class="nav-caption">MENU</p>
+        <nav class="nav-list">
+          <button class="nav-link is-active" data-page="dashboard"><span class="nav-icon">▦</span>Dashboard</button>
+          <button class="nav-link" data-page="customers"><span class="nav-icon">♙</span>Customers</button>
+          <button class="nav-link" data-page="applications"><span class="nav-icon">▤</span>Applications<span class="nav-badge" id="application-badge"></span></button>
+          <button class="nav-link" data-page="overdue"><span class="nav-icon">◷</span>Overdue</button>
+        </nav>
+        <div class="sidebar-bottom">
+          <span class="owner-avatar">AN</span>
+          <span><strong>Store owner</strong><small id="owner-username">Signed in</small></span>
+          <span class="online-dot" title="Connected"></span>
+        </div>
+      </aside>
+
+      <main class="main-area">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" id="today-label"></p>
+            <h1 id="page-title">Dashboard</h1>
+          </div>
+          <div class="topbar-actions">
+            <span class="connection-state"><span class="online-dot"></span> All changes saved</span>
+            <button class="button button-quiet button-small" id="sign-out-button" type="button">Sign out</button>
+            <button class="button button-primary" id="quick-add-button"><span aria-hidden="true">＋</span> Record entry</button>
+          </div>
+        </header>
+        <section id="notice" class="notice" role="status" aria-live="polite" hidden></section>
+        <section id="view" aria-live="polite">
+          <div class="loading-state">Loading your store…</div>
+        </section>
+        <footer class="app-footer">Credit Tracker <span>·</span> Private to your store</footer>
+      </main>
+    </div>
+
+    <dialog id="modal" class="modal">
+      <form id="modal-form" class="modal-card">
+        <div class="modal-heading">
+          <div><p class="eyebrow" id="modal-eyebrow">STORE RECORD</p><h2 id="modal-title"></h2></div>
+          <button class="icon-button" type="button" id="modal-close" aria-label="Close dialog">×</button>
+        </div>
+        <div id="modal-fields" class="form-fields"></div>
+        <div class="modal-actions">
+          <button class="button button-quiet" type="button" id="modal-cancel">Cancel</button>
+          <button class="button button-primary" type="submit" id="modal-submit">Save record</button>
+        </div>
+      </form>
+    </dialog>
+  </body>
+</html>
