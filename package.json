@@ -9,6 +9,7 @@
     "dev": "node scripts/dev.js",
     "test": "node --test",
     "owner:reset-password": "node scripts/reset-owner-password.js",
+    "owner:reset-password:cloud": "node scripts/reset-cloud-owner-password.js",
     "db:import-json": "node scripts/json-to-mysql.js",
     "db:import-cloud": "node scripts/json-to-mysql.js --cloud",
     "db:import-d1": "node scripts/json-to-d1.js",

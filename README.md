@@ -40,6 +40,7 @@ The login page alone is not the full app: `/api/...` needs the Worker, and the W
    ```
 
    Open the `*.workers.dev` address Wrangler reports. On first launch, enter the setup key and create the owner account.
+   To reset the hosted owner password later, run `npm run owner:reset-password:cloud` from the project folder. Wrangler must be logged in; the new password is entered through a hidden terminal prompt, and existing sessions are signed out.
 6. To copy current XAMPP records, first export them:
 
    ```powershell

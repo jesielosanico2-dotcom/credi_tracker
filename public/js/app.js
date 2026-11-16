@@ -101,7 +101,7 @@ function rememberUsername(username) {
   }
 }
 
-function showAuthScreen(setupRequired, errorMessage = "", setupKeyRequired = false) {
+function showAuthScreen(setupRequired, errorMessage = "", setupKeyRequired = false, autoDismissMessageAfterMs = 0) {
   const username = rememberedUsername();
   document.body.innerHTML = `
     <main class="auth-shell">
@@ -149,6 +149,11 @@ function showAuthScreen(setupRequired, errorMessage = "", setupKeyRequired = fal
         <p class="auth-session-note">For your security, signing in ends when you close your browser. You will need your password again next time.</p>
       </section>
     </main>`;
+
+  if (errorMessage && autoDismissMessageAfterMs > 0) {
+    const message = document.querySelector(".auth-error");
+    window.setTimeout(() => message?.remove(), autoDismissMessageAfterMs);
+  }
 
   const form = document.querySelector("#auth-form");
   form.addEventListener("submit", async (event) => {
@@ -542,7 +547,7 @@ document.querySelector("#sign-out-button").addEventListener("click", async () =>
   button.disabled = true;
   try {
     await api("/api/auth/logout", { method: "POST", body: "{}" });
-    showAuthScreen(false, "You have signed out.");
+    showAuthScreen(false, "You have signed out.", false, 3000);
   } catch (error) {
     button.disabled = false;
     showNotice(error.message, true);
