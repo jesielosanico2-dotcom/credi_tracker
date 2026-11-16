@@ -3,7 +3,13 @@ const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
-const { createApp, summarizeCustomer, dashboardData } = require("../src/server");
+const serverModule = require("../src/server");
+const { createApp, summarizeCustomer, dashboardData } = serverModule;
+
+test("server module exports a Vercel-compatible request handler", () => {
+  assert.equal(typeof serverModule, "function");
+  assert.equal(typeof serverModule.createApp, "function");
+});
 
 const seed = {
   settings: { storeName: "Aling Nena's Sari-Sari Store", currency: "PHP" },
@@ -44,10 +50,10 @@ function dateAfter(days) {
   return localDate.toISOString().slice(0, 10);
 }
 
-async function withServer(run) {
+async function withServer(run, initialData = seed) {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "credit-tracker-test-"));
   const dataFile = path.join(directory, "db.json");
-  await fs.writeFile(dataFile, `${JSON.stringify(seed, null, 2)}\n`);
+  await fs.writeFile(dataFile, `${JSON.stringify(initialData, null, 2)}\n`);
   const server = createApp({ dataFile });
 
   try {
@@ -95,6 +101,12 @@ test("seed data rolls up balances, collections, and oldest-due payments", () => 
 });
 
 test("the dashboard endpoint returns the current JSON-backed store summary", async () => {
+  const dashboardSeed = {
+    ...seed,
+    transactions: seed.transactions.map((transaction) =>
+      transaction.type === "payment" ? { ...transaction, date: dateAfter(0) } : transaction
+    )
+  };
   await withServer(async (baseUrl, dataFile, request) => {
     const unauthenticated = await requestJson(baseUrl, "/api/dashboard");
     assert.equal(unauthenticated.status, 401);
@@ -103,7 +115,7 @@ test("the dashboard endpoint returns the current JSON-backed store summary", asy
     assert.equal(body.storeName, "Aling Nena's Sari-Sari Store");
     assert.equal(body.metrics.totalOutstanding, 1080);
     assert.equal(body.metrics.collectedThisMonth, 270);
-  });
+  }, dashboardSeed);
 });
 
 test("a new customer application creates a customer only after approval", async () => {
@@ -134,6 +146,26 @@ test("a new customer application creates a customer only after approval", async 
 
     const savedData = JSON.parse(await fs.readFile(dataFile, "utf8"));
     assert.ok(savedData.customers.some((customer) => customer.id === ana.id));
+  });
+});
+
+test("deleting a customer also removes its transaction and application history", async () => {
+  await withServer(async (baseUrl, dataFile, request) => {
+    const deleted = await request("/api/customers/cus-maria-santos", { method: "DELETE" });
+    assert.equal(deleted.status, 200);
+    assert.deepEqual(deleted.body.customer, { id: "cus-maria-santos", name: "Maria Santos" });
+
+    const customers = await request("/api/customers");
+    assert.equal(customers.body.customers.some((customer) => customer.id === "cus-maria-santos"), false);
+    const dashboard = await request("/api/dashboard");
+    assert.equal(dashboard.body.metrics.totalOutstanding, 730);
+
+    const savedData = JSON.parse(await fs.readFile(dataFile, "utf8"));
+    assert.equal(savedData.transactions.some((transaction) => transaction.customerId === "cus-maria-santos"), false);
+    assert.equal(savedData.applications.some((application) => application.customerId === "cus-maria-santos"), false);
+
+    const missing = await request("/api/customers/cus-maria-santos", { method: "DELETE" });
+    assert.equal(missing.status, 404);
   });
 });
 

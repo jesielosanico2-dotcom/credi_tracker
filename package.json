@@ -11,7 +11,13 @@
     "owner:reset-password": "node scripts/reset-owner-password.js",
     "db:import-json": "node scripts/json-to-mysql.js",
     "db:import-cloud": "node scripts/json-to-mysql.js --cloud",
-    "db:export-json": "node scripts/mysql-to-json.js"
+    "db:import-d1": "node scripts/json-to-d1.js",
+    "db:export-json": "node scripts/mysql-to-json.js",
+    "cf:dev": "wrangler dev",
+    "cf:deploy": "wrangler deploy",
+    "cf:d1:create": "wrangler d1 create credit-tracker",
+    "cf:d1:migrate:local": "wrangler d1 migrations apply credit-tracker --local",
+    "cf:d1:migrate": "wrangler d1 migrations apply credit-tracker --remote"
   },
   "dependencies": {
     "dotenv": "^16.4.7",
@@ -19,5 +25,11 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "wrangler": "^4.152.0"
+  },
+  "overrides": {
+    "undici": "7.30.1"
   }
 }

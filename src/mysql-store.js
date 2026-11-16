@@ -116,6 +116,22 @@ function createMySqlStore(pool) {
         ]
       );
     }
+
+    for (const [table, records] of [
+      ["transactions", data.transactions],
+      ["applications", data.applications],
+      ["customers", data.customers]
+    ]) {
+      if (records.length) {
+        const placeholders = records.map(() => "?").join(", ");
+        await connection.execute(
+          `DELETE FROM ${table} WHERE id NOT IN (${placeholders})`,
+          records.map((record) => record.id)
+        );
+      } else {
+        await connection.execute(`DELETE FROM ${table}`);
+      }
+    }
   }
 
   async function update(change) {

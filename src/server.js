@@ -5,12 +5,8 @@ const fs = require("node:fs/promises");
 const path = require("node:path");
 const { randomUUID } = require("node:crypto");
 const { URL } = require("node:url");
-const { createStore, defaultDataPath } = require("./store");
-const { AuthError, createAuth, createMySqlAuth } = require("./auth");
-const { createDatabasePool } = require("./mysql-database");
-const { createMySqlStore } = require("./mysql-store");
+const { AuthError } = require("./auth-error");
 
-const publicDirectory = path.join(__dirname, "..", "public");
 const maxBodyBytes = 1024 * 1024;
 
 class HttpError extends Error {
@@ -207,12 +203,21 @@ function findCustomer(data, id) {
 
 function createApp(options = {}) {
   const testFileMode = Boolean(options.dataFile);
-  const dataFile = options.dataFile || defaultDataPath;
-  const pool = options.pool || (testFileMode ? null : createDatabasePool());
-  const store = options.store || (pool ? createMySqlStore(pool) : createStore(dataFile));
-  const authFile = options.authFile || path.join(path.dirname(dataFile), "auth.json");
-  const auth = options.auth || (pool ? createMySqlAuth(pool) : createAuth(authFile));
+  const dataFile = options.dataFile || null;
+  let pool = options.pool || null;
+  if (!pool && !testFileMode && !(options.store && options.auth)) {
+    pool = require("./mysql-database").createDatabasePool();
+  }
+  const store = options.store || (pool
+    ? require("./mysql-store").createMySqlStore(pool)
+    : require("./store").createStore(dataFile || require("./store").defaultDataPath));
+  const authFile = options.authFile || (dataFile ? path.join(path.dirname(dataFile), "auth.json") : null);
+  const auth = options.auth || (pool
+    ? require("./auth").createMySqlAuth(pool)
+    : require("./auth").createAuth(authFile || path.join(require("./store").defaultDataPath, "..", "auth.json")));
   const secureCookie = options.secureCookies ?? process.env.NODE_ENV === "production";
+  const setupKeyRequired = options.setupKeyRequired ?? process.env.NODE_ENV === "production";
+  const setupKey = options.setupKey ?? process.env.OWNER_SETUP_KEY;
   const loginAttempts = new Map();
   const loginAttemptWindowMs = 15 * 60 * 1000;
   const maxLoginAttempts = 5;
@@ -231,15 +236,14 @@ function createApp(options = {}) {
         ...account,
         authenticated: Boolean(session),
         username: session?.username,
-        setupKeyRequired: process.env.NODE_ENV === "production"
+        setupKeyRequired
       });
       return;
     }
     if (route === "/api/auth/setup" && method === "POST") {
       verifySameOrigin(request);
       const body = await readJson(request);
-      if (process.env.NODE_ENV === "production") {
-        const setupKey = process.env.OWNER_SETUP_KEY;
+      if (setupKeyRequired) {
         if (!setupKey) throw new HttpError(503, "Owner setup is disabled until OWNER_SETUP_KEY is configured.");
         if (body.setupKey !== setupKey) throw new HttpError(403, "The deployment setup key is incorrect.");
       }
@@ -317,6 +321,17 @@ function createApp(options = {}) {
         .filter((transaction) => transaction.customerId === customer.id)
         .sort((first, second) => second.date.localeCompare(first.date) || second.createdAt.localeCompare(first.createdAt));
       sendJson(response, 200, { customer, transactions });
+      return;
+    }
+    if (customerMatch && method === "DELETE") {
+      const deletedCustomer = await store.update((current) => {
+        const customer = findCustomer(current, customerMatch[1]);
+        current.customers = current.customers.filter((item) => item.id !== customer.id);
+        current.transactions = current.transactions.filter((item) => item.customerId !== customer.id);
+        current.applications = current.applications.filter((item) => item.customerId !== customer.id);
+        return { id: customer.id, name: customer.name };
+      });
+      sendJson(response, 200, { customer: deletedCustomer });
       return;
     }
     if (customerMatch && method === "PATCH") {
@@ -467,6 +482,7 @@ function createApp(options = {}) {
       throw new HttpError(400, "Invalid URL path.");
     }
     const relativePath = pathname === "/" ? "index.html" : pathname.replace(/^\/+/, "");
+    const publicDirectory = path.join(__dirname, "..", "public");
     const filePath = path.resolve(publicDirectory, relativePath);
     const resolvedRelativePath = path.relative(publicDirectory, filePath);
     if (resolvedRelativePath === ".." || resolvedRelativePath.startsWith(`..${path.sep}`) || path.isAbsolute(resolvedRelativePath)) {
@@ -529,12 +545,12 @@ function createApp(options = {}) {
 
 if (require.main === module) {
   const port = Number(process.env.PORT || 3000);
-  const databasePool = createDatabasePool();
+  const databasePool = require("./mysql-database").createDatabasePool();
   const server = createApp({ pool: databasePool });
   server.on("close", () => {
     databasePool.end().catch((error) => console.error("Could not close the MySQL connection pool:", error));
   });
-  createMySqlStore(databasePool).read().then(() => {
+  require("./mysql-store").createMySqlStore(databasePool).read().then(() => {
     server.listen(port, "127.0.0.1", () => {
       console.log(`Credit Tracker is running at http://127.0.0.1:${port}`);
     });
@@ -546,4 +562,19 @@ if (require.main === module) {
   });
 }
 
-module.exports = { createApp, dashboardData, summarizeCustomer };
+let serverlessRequestHandler;
+
+function handleServerlessRequest(request, response) {
+  if (!serverlessRequestHandler) {
+    const pool = createDatabasePool({ connectionLimit: Number(process.env.DB_CONNECTION_LIMIT || 2) });
+    const app = createApp({ pool, secureCookies: true });
+    serverlessRequestHandler = app.listeners("request")[0];
+  }
+  return serverlessRequestHandler(request, response);
+}
+
+module.exports = Object.assign(handleServerlessRequest, {
+  createApp,
+  dashboardData,
+  summarizeCustomer
+});

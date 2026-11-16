@@ -59,9 +59,26 @@ async function api(url, options = {}) {
       ...options.headers
     }
   });
-  const result = await response.json();
+  const responseBody = await response.text();
+  let result;
+  try {
+    result = responseBody ? JSON.parse(responseBody) : null;
+  } catch {
+    const error = new Error(
+      `The server returned an invalid response (HTTP ${response.status}). Check the API deployment and database configuration.`
+    );
+    error.status = response.status;
+    throw error;
+  }
+  if (!result || typeof result !== "object") {
+    const error = new Error(
+      `The server returned an empty response (HTTP ${response.status}). Check the API deployment and database configuration.`
+    );
+    error.status = response.status;
+    throw error;
+  }
   if (!response.ok) {
-    const error = new Error(result.error || "The request could not be completed.");
+    const error = new Error(result.error || `The request failed (HTTP ${response.status}).`);
     error.status = response.status;
     throw error;
   }
@@ -278,6 +295,7 @@ function customerRow(customer) {
       <button class="button button-primary button-small" data-action="manage" data-id="${escapeHtml(customer.id)}">Manage</button>
       <button class="button button-secondary button-small" data-action="credit" data-id="${escapeHtml(customer.id)}">Add credit</button>
       <button class="button button-secondary button-small" data-action="payment" data-id="${escapeHtml(customer.id)}">Payment</button>
+      <button class="button button-danger button-small" data-action="delete-customer" data-id="${escapeHtml(customer.id)}" data-name="${escapeHtml(customer.name)}" data-balance="${customer.balance}">Delete</button>
     </span></td>
   </tr>`;
 }
@@ -332,6 +350,7 @@ async function renderAccount() {
           <button class="button button-secondary button-small" data-action="credit" data-id="${escapeHtml(customer.id)}">＋ Add credit</button>
           <button class="button button-secondary button-small" data-action="payment" data-id="${escapeHtml(customer.id)}">Record payment</button>
           <button class="button ${customer.status === "active" ? "button-danger" : "button-primary"} button-small" data-action="toggle-suspension" data-id="${escapeHtml(customer.id)}">${customer.status === "active" ? "Suspend" : "Reactivate"}</button>
+          <button class="button button-danger button-small" data-action="delete-customer" data-id="${escapeHtml(customer.id)}" data-name="${escapeHtml(customer.name)}" data-balance="${customer.balance}">Delete customer</button>
         </div>
       </div>
       <div class="account-metrics">
@@ -468,6 +487,19 @@ async function openEditCustomerModal(customerId) {
   }, "Save changes");
 }
 
+async function deleteCustomer(customerId, name, balance) {
+  const historyWarning = balance > 0
+    ? ` The outstanding balance of ${money(balance)} and its account history will also be permanently removed.`
+    : " The account history will also be permanently removed.";
+  if (!window.confirm(`Permanently delete ${name}?${historyWarning} This cannot be undone.`)) return;
+
+  await api(`/api/customers/${encodeURIComponent(customerId)}`, { method: "DELETE" });
+  currentCustomerId = null;
+  activePage = "customers";
+  showNotice(`${name} and the associated account records were deleted.`);
+  await render();
+}
+
 function openVoidModal(transactionId) {
   openModal("Void account entry", `
     <p class="table-muted">Voiding keeps the entry in the customer history while removing it from their balance.</p>
@@ -540,6 +572,7 @@ view.addEventListener("click", async (event) => {
     if (action === "back-customers") navTo("customers");
     if (action === "credit" || action === "payment") await openEntryModal(action === "credit" ? "credit" : "payment", id);
     if (action === "edit-customer") await openEditCustomerModal(id);
+    if (action === "delete-customer") await deleteCustomer(id, button.dataset.name, Number(button.dataset.balance));
     if (action === "void") openVoidModal(id);
     if (action === "toggle-suspension") {
       const { customer } = await api(`/api/customers/${encodeURIComponent(id)}`);

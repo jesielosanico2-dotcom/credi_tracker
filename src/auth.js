@@ -7,18 +7,12 @@ const {
   timingSafeEqual
 } = require("node:crypto");
 const { promisify } = require("node:util");
+const { AuthError } = require("./auth-error");
 
 const scrypt = promisify(scryptCallback);
 const sessionDurationMs = 12 * 60 * 60 * 1000;
 const dummySalt = Buffer.alloc(16, 42);
 const dummyHash = Buffer.alloc(64, 42);
-
-class AuthError extends Error {
-  constructor(status, message) {
-    super(message);
-    this.status = status;
-  }
-}
 
 function hashSessionToken(token) {
   return createHash("sha256").update(token).digest("hex");

@@ -130,6 +130,25 @@ test("MySQL store commits updates and rolls them back on validation errors", asy
   assert.equal(pool.statements.filter((statement) => statement.type === "rollback").length, 1);
 });
 
+test("MySQL store removes deleted records in foreign-key-safe order", async () => {
+  const pool = createFakePool();
+  const store = createMySqlStore(pool);
+  await store.update((data) => {
+    data.customers = [];
+    data.transactions = [];
+    data.applications = [];
+  });
+
+  const deletes = pool.statements
+    .filter((statement) => statement.type === "execute" && statement.sql.startsWith("DELETE FROM"))
+    .map((statement) => statement.sql);
+  assert.deepEqual(deletes, [
+    "DELETE FROM transactions",
+    "DELETE FROM applications",
+    "DELETE FROM customers"
+  ]);
+});
+
 test("database JSON describes all tables, relationships, and sample records", async () => {
   const schema = JSON.parse(await fs.readFile(path.join(__dirname, "database", "data.json"), "utf8"));
   assert.equal(schema.database.name, "credit_tracker");

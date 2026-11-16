@@ -3,5 +3,7 @@ data/*.tmp
 data/auth.json
 .env
 .env.cloud
+.dev.vars
+.wrangler/
 *.log
 .vercel
