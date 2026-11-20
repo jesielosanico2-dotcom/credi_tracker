@@ -105,48 +105,66 @@ function showAuthScreen(setupRequired, errorMessage = "", setupKeyRequired = fal
   const username = rememberedUsername();
   document.body.innerHTML = `
     <main class="auth-shell">
-      <section class="auth-card">
-        <a class="brand auth-brand" href="/" aria-label="Credit Tracker home">
-          <img class="brand-logo" src="/images/store-logo.png" alt="Burnico neighborhood store logo">
-          <span class="brand-copy"><strong>Credit Tracker</strong><small>BURNICO SARI-SARI Store</small></span>
-        </a>
-        <p class="eyebrow">${setupRequired ? "FIRST-TIME SETUP" : "PRIVATE STORE ACCOUNT"}</p>
-        <h1>${setupRequired ? "Create your owner account" : "Welcome back"}</h1>
-        <p class="auth-description">${setupRequired
-          ? setupKeyRequired
-            ? "Enter your deployment setup key, then set a username and strong password."
-            : "Set a username and strong password to protect your store and customer records."
-          : username
-          ? "Enter your password to sign in."
-            : "Sign in with your owner username and password."}</p>
-        ${errorMessage ? `<p class="auth-error" role="alert">${escapeHtml(errorMessage)}</p>` : ""}
-        <form id="auth-form" class="form-fields" autocomplete="on">
-          ${setupRequired && setupKeyRequired ? field("Deployment setup key", "setupKey", "password", {
-            required: true,
-            max: "256",
-            placeholder: "Enter the key configured in Vercel"
-          }) : ""}
-          ${field("Owner username", "username", "text", {
-            required: true,
-            max: "40",
-            value: username,
-            placeholder: "Letters, numbers, dots, or hyphens"
-          })}
-          ${field("Password", "password", "password", {
-            required: true,
-            minLength: setupRequired ? "12" : undefined,
-            max: "128",
-            placeholder: setupRequired ? "At least 12 characters" : "Enter your password"
-          })}
-          ${setupRequired ? field("Confirm password", "confirmPassword", "password", {
-            required: true,
-            minLength: "12",
-            max: "128",
-            placeholder: "Enter your password again"
-          }) : ""}
-          <button class="button button-primary auth-submit" type="submit">${setupRequired ? "Create account" : "Sign in"}</button>
-        </form>
-        <p class="auth-session-note">For your security, signing in ends when you close your browser. You will need your password again next time.</p>
+      <section class="auth-layout" aria-label="Credit Tracker sign in">
+        <aside class="auth-promo">
+          <div class="promo-register">
+            <span class="promo-register-icon" aria-hidden="true">▣</span>
+            <span><strong>BURNICO SARI-SARI Store</strong><small>Owner access only</small></span>
+            <b>Private</b>
+          </div>
+          <div class="promo-stats">
+            <div><span>Customer tabs</span><strong>In one ledger</strong></div>
+            <div><span>Overdue accounts</span><strong>Reminders ready</strong></div>
+          </div>
+          <div class="promo-quote">
+            <blockquote><span aria-hidden="true">“</span>Run your neighborhood store with trust.<br>Keep track of customer tabs, send friendly payment reminders, and keep cashflow steady.</blockquote>
+          </div>
+        </aside>
+        <section class="auth-card">
+          <div class="auth-topbar">
+            <a class="brand auth-brand" href="/" aria-label="Credit Tracker home">
+              <img class="brand-logo" src="/images/store-logo.png" alt="Burnico neighborhood store logo">
+              <span class="brand-copy"><strong>Credit Tracker</strong><small>BURNICO SARI-SARI Store</small></span>
+            </a>
+          </div>
+          <div class="auth-content">
+            <h1>${setupRequired ? "Create your owner account" : "Welcome back"}</h1>
+            <p class="auth-description">${setupRequired
+              ? "Set a username and a strong password to protect your store."
+              : "Sign in with your owner account."}</p>
+            ${errorMessage ? `<p class="auth-error" role="alert">${escapeHtml(errorMessage)}</p>` : ""}
+            <form id="auth-form" autocomplete="on">
+              ${setupRequired && setupKeyRequired ? field("Deployment setup key", "setupKey", "password", {
+                required: true,
+                max: "256",
+                autocomplete: "off",
+                placeholder: "Enter the key configured in Vercel"
+              }) : ""}
+              ${field("Owner username", "username", "text", {
+                required: true,
+                max: "40",
+                value: username,
+                autocomplete: "username",
+                placeholder: "Enter owner username"
+              })}
+              ${field("Password", "password", "password", {
+                required: true,
+                minLength: setupRequired ? "12" : undefined,
+                max: "128",
+                autocomplete: setupRequired ? "new-password" : "current-password",
+                placeholder: setupRequired ? "At least 12 characters" : "Enter your password"
+              })}
+              ${setupRequired ? field("Confirm password", "confirmPassword", "password", {
+                required: true,
+                minLength: "12",
+                max: "128",
+                autocomplete: "new-password",
+                placeholder: "Enter your password again"
+              }) : ""}
+              <button class="button auth-submit" type="submit">${setupRequired ? "Create account" : "Sign in"} <span>→</span></button>
+            </form>
+          </div>
+        </section>
       </section>
     </main>`;
 
@@ -413,6 +431,7 @@ function field(label, name, type = "text", options = {}) {
   const value = options.value !== undefined ? `value="${escapeHtml(options.value)}"` : "";
   const placeholder = options.placeholder ? `placeholder="${escapeHtml(options.placeholder)}"` : "";
   const minLength = options.minLength ? `minlength="${escapeHtml(options.minLength)}"` : "";
+  const autocomplete = options.autocomplete ? `autocomplete="${escapeHtml(options.autocomplete)}"` : "";
   if (type === "select") {
     const choices = options.choices.map((choice) => `<option value="${escapeHtml(choice.value)}" ${choice.value === options.value ? "selected" : ""}>${escapeHtml(choice.label)}</option>`).join("");
     return `<label class="field-label">${escapeHtml(label)}<select class="field-control" name="${escapeHtml(name)}" ${required}>${choices}</select></label>`;
@@ -420,7 +439,7 @@ function field(label, name, type = "text", options = {}) {
   if (type === "textarea") {
     return `<label class="field-label">${escapeHtml(label)}<textarea class="field-control" name="${escapeHtml(name)}" maxlength="${options.maxLength || 240}" ${required} ${placeholder}>${escapeHtml(options.value || "")}</textarea></label>`;
   }
-  return `<label class="field-label">${escapeHtml(label)}<input class="field-control" name="${escapeHtml(name)}" type="${escapeHtml(type)}" ${required} ${min} ${max} ${step} ${minLength} ${value} ${placeholder}></label>`;
+  return `<label class="field-label">${escapeHtml(label)}<input class="field-control" name="${escapeHtml(name)}" type="${escapeHtml(type)}" ${required} ${min} ${max} ${step} ${minLength} ${autocomplete} ${value} ${placeholder}></label>`;
 }
 
 function openModal(title, fields, action, submitLabel = "Save record") {
